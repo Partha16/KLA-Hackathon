@@ -31,5 +31,5 @@ if __name__ == "__main__":
     t2.join()
   
     # both threads completely executed
-    print("Done! 2e")
+    print("Done!")
     
