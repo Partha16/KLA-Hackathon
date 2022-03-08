@@ -348,4 +348,4 @@ for i in data:
     if data[i]['Execution'] =='Sequential':
         p1 = Logger(data[i],i)
         del p1
-print(dts)
+#print(dts)
