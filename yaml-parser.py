@@ -8,9 +8,6 @@ import threading
 import sys
 import pandas as pd
 
-dts = {}
-ops = {}
-path = "Milestone2"
 class Logger:
     
     data = {}
@@ -113,8 +110,18 @@ class Logger:
                 return
             
         if func == "TimeFunction":
+            f_input = inputs['FunctionInput']
+            if '$' in inputs['FunctionInput']:
+                st = 0
+                ed = 0
+                for i in range(len(f_input)):
+                    if f_input[i] == '(':
+                        st = i
+                    if f_input[i] == ')':
+                        ed = i
+                f_input = ops[f_input[st+1:ed]]
             self.threadLock.acquire()
-            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ('+inputs['FunctionInput']+' , '+inputs['ExecutionTime']+')' )
+            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ('+str(f_input)+' , '+inputs['ExecutionTime']+')' )
             self.threadLock.release()
 
             self.TimeFunction(inputs['ExecutionTime'])
@@ -126,6 +133,7 @@ class Logger:
             
             temp = self.DataLoad(path+'/'+inputs['Filename'])
             ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
+            dts[self.cur+'.'+name+'DataTable'] = temp['DataTable']
             
         self.threadLock.acquire()
         print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Exit')
@@ -165,13 +173,45 @@ class Logger:
 #sys.stdout = orig_stdout
 #f.close()
 
-with open('Milestone2\Milestone2A.yaml','r') as f:
+## -------------------Milestoone 2A-----------------------------
+#dts = {}
+#ops = {}
+#path = "Milestone2"
+
+#with open('Milestone2\Milestone2A.yaml','r') as f:
+#    data = yaml.load(f, Loader=SafeLoader)
+
+#orig_stdout = sys.stdout
+#f = open('ml2a.txt', 'w')
+#sys.stdout = f
+
+#for i in data:
+    #print(i)
+#    if data[i]['Execution'] =='Sequential':
+#        p1 = Logger(data[i],i)
+#        del p1
+
+#sys.stdout = orig_stdout
+#f.close()
+
+## -------------------Milestoone 2B-----------------------------
+dts = {}
+ops = {}
+path = "Milestone2"
+
+with open('Milestone2\Milestone2B.yaml','r') as f:
     data = yaml.load(f, Loader=SafeLoader)
+
+orig_stdout = sys.stdout
+f = open('ml2b.txt', 'w')
+sys.stdout = f
 
 for i in data:
     #print(i)
     if data[i]['Execution'] =='Sequential':
         p1 = Logger(data[i],i)
         del p1
-    
-#print(ops)
+
+sys.stdout = orig_stdout
+f.close()
+
