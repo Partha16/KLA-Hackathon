@@ -2,7 +2,7 @@ from glob import glob
 import yaml
 from yaml.loader import SafeLoader
 import datetime
-import time
+import time as t
 
 with open('Milestone1/Milestone1A.yaml','r') as f:
     data = yaml.load(f, Loader=SafeLoader)
@@ -16,7 +16,7 @@ class Sequential:
         global time
         self.data = data
         self.cur = cur
-        print(str(time)+';'+self.cur+' Entry')
+        print(str(datetime.datetime.now())+';'+self.cur+' Entry')
         k = data['Activities']
         for j in k:
             if k[j]['Type'] =='Task':
@@ -30,20 +30,21 @@ class Sequential:
 
     def __del__(self):
         global time 
-        print(str(time)+';'+self.cur+' Exit')
+        print(str(datetime.datetime.now())+';'+self.cur+' Exit')
 
     def TimeFunction(self,i):
-        global time
-        time += datetime.timedelta(0,int(i))
+        #global time
+        #time += datetime.timedelta(0,int(i))
+        t.sleep(int(i))
         #print(self.time)
     
     def exec_func(self,name,func,inputs):
         global time
-        print(str(time)+';'+self.cur+'.'+name+' Entry')
+        print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Entry')
         if func == "TimeFunction":
-            print(str(time)+';'+self.cur+'.'+name+' Executing '+func+' ( '+inputs['FunctionInput']+' , '+inputs['ExecutionTime']+' )' )
+            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ( '+inputs['FunctionInput']+' , '+inputs['ExecutionTime']+' )' )
             self.TimeFunction(inputs['ExecutionTime'])
-        print(str(time)+';'+self.cur+'.'+name+' Exit')
+        print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Exit')
 
 class Concurrent:
 
@@ -53,7 +54,7 @@ class Concurrent:
         global time
         self.data = data
         self.cur = cur
-        
+
 time = datetime.datetime.now()
 for i in data:
     print(i)
