@@ -123,10 +123,32 @@ class Logger:
         
         d_copy['Bincode'] = bin_col
         self.threadLock.acquire()
-        print(d_copy)
+        #print(d_copy)
         self.threadLock.release()
 
         return {'BinningResultsTable':d_copy,'NoOfDefects':ln}
+
+    def MergeResults(self,precedence, datasets):
+        f = open(precedence, "r")
+        order = f.read()
+        order = order.split(' ')
+        order = [value for value in order if value != '>>']
+        bin_col = np.zeros(len(datasets[0]))
+        for i in range(len(datasets[0])):
+            for j in range(len(datasets)):
+                if datasets[j].iloc[i]['Bincode'] != 0:
+                    if bin_col[i] == 0:
+                        bin_col[i] = datasets[j].iloc[i]['Bincode']
+                    else:
+                        if order.index(bin_col) > order.index(datasets[j].iloc[i]['Bincode']):
+                            bin_col[i] = datasets[j].iloc[i]['Bincode']
+        ds = datasets[0].copy()
+        ds['Bincode'] = bin_col
+        #print(ds)
+        return {'MergedResults':ds , 'NoOfDefects':len(bin_col)}
+
+    def ExportResults(self,FileName,dt):
+        dt.to_csv(FileName,  index = False)
 
     def exec_func(self,name,k):
         global path,ops,dts
@@ -173,7 +195,7 @@ class Logger:
             temp = self.DataLoad(path+'/'+inputs['Filename'])
             ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
             dts[self.cur+'.'+name+'.DataTable'] = temp['DataTable']
-            print(dts)
+            #print(dts)
 
         if func == 'Binning':
             ds_input = inputs['DataSet']
@@ -193,10 +215,50 @@ class Logger:
             dts[self.cur+'.'+name+'.BinningResultsTable'] = temp['BinningResultsTable']
             ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
 
+        if func == 'MergeResults':
+            pr = inputs['PrecedenceFile']
+            datasets = []
+            for i in inputs:
+                if 'DataSet' in i:
+                    if '$' in inputs[i]:
+                        ds_input = inputs[i]
+                        st = 0
+                        ed = 0
+                        for i in range(len(ds_input)):
+                            if ds_input[i] == '(':
+                                st = i
+                            if ds_input[i] == ')':
+                                ed = i
+                    datasets.append(dts[ds_input[st+1:ed]])
+            self.threadLock.acquire()
+            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ('+inputs['PrecedenceFile']+')' )
+            self.threadLock.release()
+            temp = self.MergeResults(path+'/'+pr,datasets)
+            dts[self.cur+'.'+name+'.MergedResults'] = temp['MergedResults']
+            ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
+
+        if func == 'ExportResults':
+            filename = inputs['FileName']
+            ds_input = inputs['DefectTable']
+            if '$' in inputs['DefectTable']:
+                st = 0
+                ed = 0
+                for i in range(len(ds_input)):
+                    if ds_input[i] == '(':
+                        st = i
+                    if ds_input[i] == ')':
+                        ed = i
+                ds = dts[ds_input[st+1:ed]]
+            self.threadLock.acquire()
+            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ('+inputs['FileName']+')' )
+            self.threadLock.release()
+            self.ExportResults(path+'/'+filename,ds)
+
         self.threadLock.acquire()
         print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Exit')
         self.threadLock.release()
 
+##----------------------------Class Finish-----------------------------------------------------
 ## -------------------Milestoone 1A-----------------------------
 #with open('Milestone1\Milestone1A.yaml','r') as f:
 #    data = yaml.load(f, Loader=SafeLoader)
@@ -286,3 +348,4 @@ for i in data:
     if data[i]['Execution'] =='Sequential':
         p1 = Logger(data[i],i)
         del p1
+print(dts)
