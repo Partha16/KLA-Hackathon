@@ -7,6 +7,7 @@ import time as t
 import threading
 import sys
 import pandas as pd
+import numpy as np
 
 class Logger:
     
@@ -51,14 +52,17 @@ class Logger:
         print(str(datetime.datetime.now())+';'+self.cur+' Exit')
         self.threadLock.release()
 
+    #Time Func
     def TimeFunction(self,i):
         t.sleep(int(i))
     
+    #Dataload func
     def DataLoad(self,filename):
         df = pd.read_csv(filename)
         defects = len(df.index)
         return {'DataTable' : df,'NoOfDefects': defects}
-
+    
+    #Condition check function
     def conditions(self,con):
         global ops
         var = ''
@@ -89,8 +93,43 @@ class Logger:
 
         return False
 
+    def Binning(self,rule_file,dataset):
+        
+        rl = pd.read_csv(rule_file)
+        #print(rl)
+        rule = rl['RULE'][0]
+        bin = rl['BIN_ID'][0]
+        greater = -1
+        lesser = -1
+        rule = rule.split(' ')
+        ln = len(rule)
+        for i in range(len(rule)):
+            if rule[i] == '>':
+                greater = int(rule[i+1])
+            if rule[i] == '<':
+                lesser = int(rule[i+1])
+        d_copy = dataset.copy()
+        
+        if greater != -1 and lesser != -1:
+            bin_col = np.where((d_copy['Signal'] > greater) & (d_copy['Signal'] < lesser),bin,0)
+        elif greater != -1:
+            bin_col = np.where(d_copy['Signal'] > greater,bin,0)
+        else:
+            bin_col = np.where(d_copy['Signal'] < lesser,bin,0)
+
+        #self.threadLock.acquire()
+        #print(bin_col)
+        #self.threadLock.release()
+        
+        d_copy['Bincode'] = bin_col
+        self.threadLock.acquire()
+        print(d_copy)
+        self.threadLock.release()
+
+        return {'BinningResultsTable':d_copy,'NoOfDefects':ln}
+
     def exec_func(self,name,k):
-        global path,ops
+        global path,ops,dts
         func = k[name]['Function']
         inputs = k[name]['Inputs']
         self.threadLock.acquire()
@@ -133,8 +172,27 @@ class Logger:
             
             temp = self.DataLoad(path+'/'+inputs['Filename'])
             ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
-            dts[self.cur+'.'+name+'DataTable'] = temp['DataTable']
-            
+            dts[self.cur+'.'+name+'.DataTable'] = temp['DataTable']
+            print(dts)
+
+        if func == 'Binning':
+            ds_input = inputs['DataSet']
+            if '$' in inputs['DataSet']:
+                st = 0
+                ed = 0
+                for i in range(len(ds_input)):
+                    if ds_input[i] == '(':
+                        st = i
+                    if ds_input[i] == ')':
+                        ed = i
+                ds = dts[ds_input[st+1:ed]]
+            self.threadLock.acquire()
+            print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Executing '+func+' ('+inputs['RuleFilename']+','+inputs['DataSet']+')' )
+            self.threadLock.release()
+            temp = self.Binning(path+'/'+inputs['RuleFilename'],ds)
+            dts[self.cur+'.'+name+'.BinningResultsTable'] = temp['BinningResultsTable']
+            ops[self.cur+'.'+name+'.NoOfDefects'] = temp['NoOfDefects']
+
         self.threadLock.acquire()
         print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Exit')
         self.threadLock.release()
@@ -195,23 +253,36 @@ class Logger:
 #f.close()
 
 ## -------------------Milestoone 2B-----------------------------
+#dts = {}
+#ops = {}
+#path = "Milestone2"
+
+#with open('Milestone2\Milestone2B.yaml','r') as f:
+#    data = yaml.load(f, Loader=SafeLoader)
+
+#orig_stdout = sys.stdout
+#f = open('ml2b.txt', 'w')
+#sys.stdout = f
+
+#for i in data:
+    #print(i)
+#    if data[i]['Execution'] =='Sequential':
+#        p1 = Logger(data[i],i)
+#        del p1
+
+#sys.stdout = orig_stdout
+#f.close()
+
+## -------------------Milestoone 3A-----------------------------
 dts = {}
 ops = {}
-path = "Milestone2"
+path = "Milestone3"
 
-with open('Milestone2\Milestone2B.yaml','r') as f:
+with open('Milestone3\Milestone3A.yaml','r') as f:
     data = yaml.load(f, Loader=SafeLoader)
-
-orig_stdout = sys.stdout
-f = open('ml2b.txt', 'w')
-sys.stdout = f
 
 for i in data:
     #print(i)
     if data[i]['Execution'] =='Sequential':
         p1 = Logger(data[i],i)
         del p1
-
-sys.stdout = orig_stdout
-f.close()
-
