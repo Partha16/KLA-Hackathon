@@ -86,3 +86,19 @@ for i in data:
 
 sys.stdout = orig_stdout
 f.close()
+
+with open('Milestone1\Milestone1B.yaml','r') as f:
+    data = yaml.load(f, Loader=SafeLoader)
+
+orig_stdout = sys.stdout
+f = open('ml1b.txt', 'w')
+sys.stdout = f
+
+for i in data:
+    #print(i)
+    if data[i]['Execution'] =='Sequential':
+        p1 = Sequential(data[i],i)
+        del p1
+
+sys.stdout = orig_stdout
+f.close()
