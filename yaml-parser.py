@@ -70,7 +70,7 @@ class Sequential:
         print(str(datetime.datetime.now())+';'+self.cur+'.'+name+' Exit')
         self.threadLock.release()
 
-
+## -------------------Milestoone 1A-----------------------------
 with open('Milestone1\Milestone1A.yaml','r') as f:
     data = yaml.load(f, Loader=SafeLoader)
 
@@ -87,6 +87,7 @@ for i in data:
 sys.stdout = orig_stdout
 f.close()
 
+## -------------------Milestoone 1B-----------------------------
 with open('Milestone1\Milestone1B.yaml','r') as f:
     data = yaml.load(f, Loader=SafeLoader)
 
